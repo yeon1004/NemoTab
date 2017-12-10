@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="ThemeGray">#232529</color>
+    <color name="ThemeDarkRed">#571A1E</color>
+    <color name="ThemeRed">#F34B56</color>
+    <color name="ThemeBeige">#F3F2EF</color>
+    <color name="ThemeNavy">#414174</color>
+
+    <!--
+    <color name="BgGray">#3b3f42</color>
+    <color name="PointBlue">#56B9D0</color>
+    <color name="PointWhite">#FEFEFE</color>
+    <color name="PointOrange">#FBBA42</color>
+    <color name="PointRed">#F24C27</color>
+    -->
+
+    <color name="GBback">#363636</color>
+    <color name="GBfore">#606060</color>
+    <color name="GBhighlight">#BFBFBF</color>
+
+    <color name="bc1">#f24026</color>
+    <color name="bc2">#FF8A09</color>
+    <color name="bc3">#FFF31C</color>
+    <color name="bc4">#8CD71C</color>
+    <color name="bc5">#79D7FF</color>
+    <color name="bc6">#0482FF</color>
+    <color name="bc7">#A639FF</color>
+
+    <color name="Black">#000000</color>
+</resources>
