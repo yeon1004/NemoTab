@@ -3,13 +3,14 @@ package com.example.iiny1.nemotab;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
-import android.os.Handler;
+//import android.os.Handler;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TableRow.LayoutParams;
@@ -17,6 +18,7 @@ import android.widget.TextView;
 
 import java.util.Random;
 import java.util.Timer;
+import java.util.TimerTask;
 
 public class BasicGameActivity extends FullScreenActivity {
 
@@ -44,6 +46,8 @@ public class BasicGameActivity extends FullScreenActivity {
 
     int[][] BoardArr;
 
+    Timer scoreTimer;
+    TimerTask scoreTask;
     TextView tvScore;
 
     int[] vLineArr = new int[4];
@@ -52,10 +56,6 @@ public class BasicGameActivity extends FullScreenActivity {
     int hLineCnt = 0;
     boolean LineChk;
 
-    Handler handler;
-    Runnable score_increase;
-    Runnable score_check;
-    Thread scoreThread;
     int targetScore; //현재 점수로부터 증가될 목표 점수
 
     //게임 상태 Layout (게임 시작, 게임 오버)
@@ -67,14 +67,9 @@ public class BasicGameActivity extends FullScreenActivity {
     Button btnGameState;
 
     //타이머
-    LinearLayout layoutTime;
-    ImageView ivTimeBar;
-    LinearLayout.LayoutParams timeLp;
-    int timeLimit;
-    int time;
-    Thread timeThread;
-    Runnable setTime;
-    Handler timeHandler;
+    ProgressBar pbTimer;
+    Timer timer;
+    TimerTask task;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,65 +154,19 @@ public class BasicGameActivity extends FullScreenActivity {
         targetScore = 0;
 
         //점수 올릴 Thread
-        handler = new Handler();
-        score_increase = new Runnable() {
+        scoreTimer = new Timer();
+        scoreTask = new TimerTask() {
             @Override
             public void run() {
                 int curScore = Integer.parseInt(tvScore.getText().toString());  //기존 점수
-                if(targetScore - curScore < 5) curScore = targetScore;
-                else curScore = curScore + 5;
-                tvScore.setText(Integer.toString(curScore));
-                /*
-                //색 반짝반짝하게
-                int nextColor = random.nextInt(7)+1;
-                switch(nextColor){
-                    case 1:
-                        tvScore.setTextColor(getResources().getColor(R.color.bc1));
-                        break;
-                    case 2:
-                        tvScore.setTextColor(getResources().getColor(R.color.bc2));
-                        break;
-                    case 3:
-                        tvScore.setTextColor(getResources().getColor(R.color.bc3));
-                        break;
-                    case 4:
-                        tvScore.setTextColor(getResources().getColor(R.color.bc4));
-                        break;
-                    case 5:
-                        tvScore.setTextColor(getResources().getColor(R.color.bc5));
-                        break;
-                    case 6:
-                        tvScore.setTextColor(getResources().getColor(R.color.bc6));
-                        break;
-                    default:
-                        tvScore.setTextColor(getResources().getColor(R.color.bc7));
-                        break;
+                if(targetScore - curScore < 5) {
+                    curScore = targetScore;
+                    //tvScore.setTextColor(Color.WHITE);
                 }
-                */
-            }
-        };
-        final Runnable scolor_toWhite = new Runnable() {
-            @Override
-            public void run() {
-                tvScore.setTextColor(Color.WHITE);
-            }
-        };
-        score_check = new Runnable() {
-            @Override
-            public void run() {
-                //try{
-                    int curScore = Integer.parseInt(tvScore.getText().toString());   //기존 점수
-                    while(curScore < targetScore)
-                    {
-                        handler.post(score_increase);
-                        try{
-                            scoreThread.sleep(20);
-                        }catch(InterruptedException e){}
-                        curScore += 5;
-                    }
-                    handler.postDelayed(scolor_toWhite, 5);
-                    //scoreThread.sleep(10);
-                //}catch(InterruptedException e) {};
+                else {
+                    curScore = curScore + 5;
+                }
+                tvScore.setText(Integer.toString(curScore));
             }
         };
 
@@ -238,7 +187,17 @@ public class BasicGameActivity extends FullScreenActivity {
 
         //타이머
         //layoutTime = (LinearLayout)findViewById(R.id.layoutTime);
-        Timer timer = new Timer();
+        pbTimer = (ProgressBar)findViewById(R.id.pbTimer);
+        pbTimer.setProgress(100);
+        timer = new Timer();
+        task = new TimerTask() {
+            @Override
+            public void run() {
+                if(pbTimer.getProgress() > 0)
+                    pbTimer.setProgress(pbTimer.getProgress() - 1);
+
+            }
+        };
     }
 
     private View.OnTouchListener btnGameStateEvent = new View.OnTouchListener()
@@ -251,11 +210,17 @@ public class BasicGameActivity extends FullScreenActivity {
             curBlockBox.setOnTouchListener(blockTouchEvent);
 
             Game_clear = false;
+            //timer.schedule(task, 1000);
+
             return true;
         }
     };
 
     private void GameOver(){
+        //tvGameModeTitle.setText("게임 오버");
+        //tvGameModeInfo.setText("-----");
+        //layoutGameStateBg.setVisibility(View.VISIBLE);
+        /*
         if(Game_clear){
             tvGameModeTitle.setText("게임 클리어");
             tvGameModeInfo.setText("-----");
@@ -276,18 +241,12 @@ public class BasicGameActivity extends FullScreenActivity {
             layoutStatBtns.addView(btnReplay);
 
             layoutGameStateBg.setVisibility(View.VISIBLE);
-            /*
-            //Stage 모드일 경우
-            Button btnHome = new Button(this);
-            Button btnNextStage = new Button(this);
-            Button btnReplay = new Button(this);
-            Button btnStageList = new Button(this);
-             */
         }else{
             tvGameModeTitle.setText("게임 오버");
             tvGameModeInfo.setText("-----");
             layoutGameStateBg.setVisibility(View.VISIBLE);
         }
+        */
     }
 
     private TableLayout DrawBlock(Block block, int order)
@@ -581,8 +540,7 @@ public class BasicGameActivity extends FullScreenActivity {
             int score = hLineCnt * 100 + vLineCnt * 100;                    //이번 턴 점수
             int curScore = Integer.parseInt(tvScore.getText().toString());   //기존 점수
             targetScore = score + curScore;
-            scoreThread = new Thread(score_check);
-            scoreThread.start();
+
 
             LineClear(true);
         }
@@ -622,13 +580,15 @@ public class BasicGameActivity extends FullScreenActivity {
             reOrder();
             return;
         }
-
+        /*
         Handler handler2 = new Handler();
         handler2.postDelayed(new Runnable() {
             public void run() {
                 LineClear(false);
             }
         }, 100);
+        */
+        LineClear(false);
     }
 
     private void reOrder()

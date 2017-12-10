@@ -114,6 +114,7 @@
                 android:layout_width="10dp"
                 android:layout_height="match_parent">
                 <ProgressBar
+                    android:id="@+id/pbTimer"
                     style="@android:style/Widget.ProgressBar.Horizontal"
                     android:layout_centerInParent="true"
                     android:layout_width="match_parent"

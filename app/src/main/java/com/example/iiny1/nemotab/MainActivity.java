@@ -29,8 +29,7 @@ public class MainActivity extends FullScreenActivity {
 
         btnSetting.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v){
-                //Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
-                //startActivityForResult(intent, 0);
+
             }
         });
 
