@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.example.iiny1.nemotab.MainActivity"
-    android:background="@color/ThemeGray"
+    android:background="@drawable/bg"
     android:orientation="vertical">
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,25 +13,19 @@
         android:layout_gravity="right"
         android:gravity="right"
         android:layout_weight="1">
-        <Button
-            android:id="@+id/btnSetting"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right"
-            android:text="Setting" />
+
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="7">
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="NemoTab"
-            android:textColor="@color/ThemeBeige"
-            android:textStyle="bold"
-            android:textSize="60dp"
-            android:gravity="center"
+        android:layout_weight="7"
+        android:layout_gravity="center"
+        android:gravity="center">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="100dp"
+            android:scaleType="fitCenter"
+            android:background="@drawable/logo"
             android:layout_gravity="center"/>
     </LinearLayout>
     <LinearLayout
@@ -42,26 +36,27 @@
         android:layout_weight="1">
         <Button
             android:id="@+id/btnLeft"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="◀"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_gravity="center"
-            android:gravity="center"/>
+            android:gravity="center"
+            android:background="@drawable/left"/>
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/tvMode"
+            android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:text="basic"
             android:textColor="#FFFFFF"
-            android:textSize="20dp"
-            android:layout_marginLeft="30dp"
-            android:layout_marginRight="30dp"
+            android:textSize="25dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
             android:layout_gravity="center"
             android:gravity="center"/>
         <Button
             android:id="@+id/btnRight"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="▶"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="@drawable/right"
             android:layout_gravity="center"
             android:gravity="center"/>
     </LinearLayout>
@@ -73,6 +68,10 @@
             android:id="@+id/btnStart"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="START"/>
+            android:textColor="@color/ThemeBeige"
+            android:textStyle="bold"
+            android:textSize="35dp"
+            android:text="START"
+            android:layout_margin="5dp"/>
     </LinearLayout>
 </LinearLayout>

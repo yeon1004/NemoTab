@@ -5,14 +5,13 @@
     </item>
     <item android:id="@android:id/progress">
         <clip
-            android:clipOrientation="vertical"
-            android:gravity="bottom">
+            android:gravity="left">
             <shape>
                 <gradient
                     android:startColor="#FF0000"
                     android:centerColor="#FFFF00"
                     android:endColor="#00FF00"
-                    android:angle="90" />
+                    android:angle="0" />
             </shape>
         </clip>
     </item>

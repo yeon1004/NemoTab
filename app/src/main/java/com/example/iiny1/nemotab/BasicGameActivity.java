@@ -1,13 +1,23 @@
 package com.example.iiny1.nemotab;
 
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.os.Bundle;
 //import android.os.Handler;
+import android.os.CountDownTimer;
+import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -16,6 +26,9 @@ import android.widget.TableRow;
 import android.widget.TableRow.LayoutParams;
 import android.widget.TextView;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -45,9 +58,6 @@ public class BasicGameActivity extends FullScreenActivity {
     int TouchedCellRow, TouchedCellCol;
 
     int[][] BoardArr;
-
-    Timer scoreTimer;
-    TimerTask scoreTask;
     TextView tvScore;
 
     int[] vLineArr = new int[4];
@@ -68,8 +78,11 @@ public class BasicGameActivity extends FullScreenActivity {
 
     //타이머
     ProgressBar pbTimer;
-    Timer timer;
-    TimerTask task;
+    CountDownTimer cdt;
+
+    //음악
+    MediaPlayer mp;
+    SoundManager mSoundManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +95,8 @@ public class BasicGameActivity extends FullScreenActivity {
                 BoardArr[i][j] = 0;
 
         GameBoard = (TableLayout)findViewById(R.id.GameBoard);
+        FrameLayout.LayoutParams gbLp = new FrameLayout.LayoutParams(getLcdSizeWidth()-5, getLcdSizeWidth()-5);
+        GameBoard.setLayoutParams(gbLp);
 
         trArr = new TableRow[iBoardSize];
         cellArr = new ImageView[iBoardSize][iBoardSize];
@@ -100,7 +115,9 @@ public class BasicGameActivity extends FullScreenActivity {
             {
                 cellArr[i][j] = new ImageView(this);
                 cellArr[i][j].setLayoutParams(cellLp);
-                cellArr[i][j].setBackgroundColor(getResources().getColor(R.color.GBfore));
+                cellArr[i][j].setScaleType(ImageView.ScaleType.FIT_XY);
+                cellArr[i][j].setBackgroundResource(R.drawable.noblock);
+                //cellArr[i][j].setBackgroundColor(getResources().getColor(R.color.GBfore));
                 //cellArr[i][j].setId();
                 trArr[i].addView(cellArr[i][j]);
             }
@@ -108,6 +125,7 @@ public class BasicGameActivity extends FullScreenActivity {
         //게임판 그리기 끝
 
         TempBoard = (TableLayout)findViewById(R.id.TempBoard);
+        TempBoard.setLayoutParams(gbLp);
 
         tempTrArr = new TableRow[iBoardSize];
         tempCellArr = new ImageView[iBoardSize][iBoardSize];
@@ -147,29 +165,22 @@ public class BasicGameActivity extends FullScreenActivity {
         nextBlock1.addView(DrawBlock(blocks[1], 2));
         nextBlock2.addView(DrawBlock(blocks[2], 3));
 
-
-
         tvScore = (TextView)findViewById(R.id.tvScore);
         tvScore.setText("0");
-        targetScore = 0;
 
-        //점수 올릴 Thread
-        scoreTimer = new Timer();
-        scoreTask = new TimerTask() {
-            @Override
-            public void run() {
-                int curScore = Integer.parseInt(tvScore.getText().toString());  //기존 점수
-                if(targetScore - curScore < 5) {
-                    curScore = targetScore;
-                    //tvScore.setTextColor(Color.WHITE);
-                }
-                else {
-                    curScore = curScore + 5;
-                }
-                tvScore.setText(Integer.toString(curScore));
-            }
-        };
+        //효과음 및 배경음악
+        mSoundManager = new SoundManager();
+        mSoundManager.initSounds(getBaseContext());
+        mSoundManager.addSound(1, R.raw.block1);
+        mSoundManager.addSound(2, R.raw.remove);
+        mSoundManager.addSound(3, R.raw.score);
+        mSoundManager.addSound(4, R.raw.fail);
+        mp = MediaPlayer.create(this, R.raw.bgm);
 
+        //타이머
+        pbTimer = (ProgressBar)findViewById(R.id.pbTimer);
+        pbTimer.setMax(200);
+        pbTimer.setProgress(200);
         //게임 상태 창
         layoutGameStateBg = (LinearLayout)findViewById(R.id.layoutGameStateBg);
         layoutGameState = (LinearLayout)findViewById(R.id.layoutGameState);
@@ -178,78 +189,82 @@ public class BasicGameActivity extends FullScreenActivity {
         layoutStatBtns = (LinearLayout)findViewById(R.id.layoutStateBtns);
         btnGameState = (Button)findViewById(R.id.btnGameState);
 
-        tvGameModeTitle.setText("게임 타이틀");
-        tvGameModeInfo.setText("게임 설명");
+        tvGameModeTitle.setText("Game \nStart");
+        tvGameModeInfo.setText("최대한 많은 라인을 클리어해서\n높은 점수를 획득하세요!");
         btnGameState.setText("시작");
-        btnGameState.setOnTouchListener(btnGameStateEvent);
+        btnGameState.setOnTouchListener(new View.OnTouchListener()
+        {
+            public boolean onTouch(View v, MotionEvent event)
+            {
+                layoutGameStateBg.setVisibility(View.INVISIBLE);
 
+                TempBoard.setOnTouchListener(BoardTouchEvent);
+                curBlockBox.setOnTouchListener(blockTouchEvent);
+
+                cdt = new CountDownTimer(1000 * 100000, 1000){
+                    public void onTick (long millisUntilFinished){
+                        if(pbTimer.getProgress() > 0){
+                            pbTimer.setProgress(pbTimer.getProgress() - 1);
+                        }else{
+                            pbTimer.setProgress(0);
+                            GameOver();
+                        }
+                    }
+                    public void onFinish(){
+
+                    }
+                }.start();
+                mp.start();
+                return true;
+            }
+        });
+        layoutGameStateBg.setVisibility(View.VISIBLE);
+    }
+
+    protected void GameOver(){
+        mp.stop();
+        mSoundManager.playSound(4);
+        cdt.cancel();
+        TempBoard.setOnTouchListener(null);
+        curBlockBox.setOnTouchListener(null);
+        tvGameModeTitle.setText("GameOver");
+        tvGameModeInfo.setText("제한시간 종료! \n최종 스코어는 "+tvScore.getText()+"점 입니다!");
+        layoutStatBtns.removeAllViews();
+        LinearLayout.LayoutParams stateBtn1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT,  1);
+        LinearLayout.LayoutParams stateBtn2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT,  2);
+        Button btnHome = new Button(this);
+        Button btnReplay = new Button(this);
+
+        btnReplay.setLayoutParams(stateBtn1);
+        btnReplay.setText("다시하기");
+        btnReplay.setBackgroundColor(getResources().getColor(R.color.ThemeRed));
+        btnReplay.setTextColor(getResources().getColor(R.color.ThemeBeige));
+        btnReplay.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v){
+                mp.stop();
+                finish();
+                startActivity(new Intent(BasicGameActivity.this, BasicGameActivity.class));
+            }
+        });
+
+        btnHome.setLayoutParams(stateBtn2);
+        btnHome.setBackgroundColor(getResources().getColor(R.color.ThemeNavy));
+        btnHome.setTextColor(getResources().getColor(R.color.ThemeBeige));
+        btnHome.setText("홈으로");
+        btnHome.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v){
+                cdt.cancel();
+                mp.stop();
+                finish();
+            }
+        });
+        layoutStatBtns.addView(btnHome);
+        layoutStatBtns.addView(btnReplay);
         layoutGameStateBg.setVisibility(View.VISIBLE);
 
-        //타이머
-        //layoutTime = (LinearLayout)findViewById(R.id.layoutTime);
-        pbTimer = (ProgressBar)findViewById(R.id.pbTimer);
-        pbTimer.setProgress(100);
-        timer = new Timer();
-        task = new TimerTask() {
-            @Override
-            public void run() {
-                if(pbTimer.getProgress() > 0)
-                    pbTimer.setProgress(pbTimer.getProgress() - 1);
-
-            }
-        };
     }
 
-    private View.OnTouchListener btnGameStateEvent = new View.OnTouchListener()
-    {
-        public boolean onTouch(View v, MotionEvent event)
-        {
-            layoutGameStateBg.setVisibility(View.INVISIBLE);
-
-            TempBoard.setOnTouchListener(BoardTouchEvent);
-            curBlockBox.setOnTouchListener(blockTouchEvent);
-
-            Game_clear = false;
-            //timer.schedule(task, 1000);
-
-            return true;
-        }
-    };
-
-    private void GameOver(){
-        //tvGameModeTitle.setText("게임 오버");
-        //tvGameModeInfo.setText("-----");
-        //layoutGameStateBg.setVisibility(View.VISIBLE);
-        /*
-        if(Game_clear){
-            tvGameModeTitle.setText("게임 클리어");
-            tvGameModeInfo.setText("-----");
-            layoutStatBtns.removeAllViews();
-            LinearLayout.LayoutParams stateBtn1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT,  2);
-            LinearLayout.LayoutParams stateBtn2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT,  1);
-            Button btnHome = new Button(this);
-            Button btnReplay = new Button(this);
-
-            btnReplay.setLayoutParams(stateBtn1);
-            btnReplay.setText("다시하기");
-
-            btnHome.setLayoutParams(stateBtn2);
-            btnHome.setBackgroundColor(getResources().getColor(R.color.ThemeBeige));
-            btnHome.setText("홈");
-
-            layoutStatBtns.addView(btnHome);
-            layoutStatBtns.addView(btnReplay);
-
-            layoutGameStateBg.setVisibility(View.VISIBLE);
-        }else{
-            tvGameModeTitle.setText("게임 오버");
-            tvGameModeInfo.setText("-----");
-            layoutGameStateBg.setVisibility(View.VISIBLE);
-        }
-        */
-    }
-
-    private TableLayout DrawBlock(Block block, int order)
+    protected TableLayout DrawBlock(Block block, int order)
     {
         //블록 배열 받아오기
         int[][] blockArr = block.getBlock();
@@ -322,7 +337,7 @@ public class BasicGameActivity extends FullScreenActivity {
         return tbBlock;
     }
 
-    private void getNextBlock()
+    protected void getNextBlock()
     {
         int bCode;
         while(true)
@@ -343,7 +358,7 @@ public class BasicGameActivity extends FullScreenActivity {
         nextBlock2.addView(DrawBlock(blocks[2], 3));
     }
 
-    private View.OnTouchListener BoardTouchEvent = new View.OnTouchListener()
+    protected View.OnTouchListener BoardTouchEvent = new View.OnTouchListener()
     {
         public boolean onTouch(View v, MotionEvent event)
         {
@@ -359,18 +374,20 @@ public class BasicGameActivity extends FullScreenActivity {
             }
             else if(action==MotionEvent.ACTION_UP){
                 RemoveBlock(); //임시 블록을 지운다
-
                 Point point = new Point((int) event.getX(), (int) event.getY());
                 //포인트 위치가 게임보드 안일 때만 블록 드롭
                 if(GameBoard.getLeft() <= point.x && point.x <= GameBoard.getRight()
-                        && GameBoard.getTop() <= point.y && point.y <= GameBoard.getBottom())
+                        && GameBoard.getTop() <= point.y && point.y <= GameBoard.getBottom()){
+                    mSoundManager.playSound(1);
                     DropBlock();
+                }
+                else mSoundManager.playSound(2);
             }
             return true;
         }
     };
 
-    private void getTouchedCell(Point point)
+    protected void getTouchedCell(Point point)
     {
         //터치 및 이동은 게임판 안에서만 움직인다
         int CellWidth = (GameBoard.getRight() - GameBoard.getLeft()) / 15;
@@ -391,7 +408,7 @@ public class BasicGameActivity extends FullScreenActivity {
         if (TouchedCellRow > iBoardSize - blocks[0].getRows()) TouchedCellRow = iBoardSize - blocks[0].getRows();
     }
 
-    private void RemoveBlock()
+    protected void RemoveBlock()
     {
         if(TouchedCellCol < 0 || TouchedCellRow < 0) return;
 
@@ -408,7 +425,7 @@ public class BasicGameActivity extends FullScreenActivity {
         }
     }
 
-    private void MarkBlock()
+    protected void MarkBlock()
     {
         int[][] block = blocks[0].getBlock(); //현재 블럭 가져옴
 
@@ -425,7 +442,7 @@ public class BasicGameActivity extends FullScreenActivity {
         }
     }
 
-    private void DropBlock()
+    protected void DropBlock()
     {
         int[][] block = blocks[0].getBlock(); //현재 블럭 가져옴
 
@@ -452,36 +469,42 @@ public class BasicGameActivity extends FullScreenActivity {
                     switch(block[row][col])
                     {
                         case 1:
-                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundColor(getResources().getColor(R.color.bc1));
+                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundResource(R.drawable.block1);
                             break;
                         case 2:
-                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundColor(getResources().getColor(R.color.bc2));
+                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundResource(R.drawable.block2);
                             break;
                         case 3:
-                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundColor(getResources().getColor(R.color.bc3));
+                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundResource(R.drawable.block3);
                             break;
                         case 4:
-                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundColor(getResources().getColor(R.color.bc4));
+                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundResource(R.drawable.block4);
                             break;
                         case 5:
-                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundColor(getResources().getColor(R.color.bc5));
+                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundResource(R.drawable.block5);
                             break;
                         case 6:
-                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundColor(getResources().getColor(R.color.bc6));
+                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundResource(R.drawable.block6);
                             break;
                         default:
-                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundColor(getResources().getColor(R.color.bc7));
+                            cellArr[TouchedCellRow + row][TouchedCellCol + col].setBackgroundResource(R.drawable.block7);
                             break;
                     }
+
                 }
             }
         }
         TouchedCellCol = TouchedCellRow = -1;
+        //점수 증가
+        int score = 10;                    //이번 턴 점수
+        int curScore = Integer.parseInt(tvScore.getText().toString());   //기존 점수
+        tvScore.setText(Integer.toString(curScore + score));
+        pbTimer.setProgress(pbTimer.getProgress()+2);
         getNextBlock();
         CheckLine();
     }
 
-    private View.OnTouchListener blockTouchEvent = new View.OnTouchListener()
+    protected View.OnTouchListener blockTouchEvent = new View.OnTouchListener()
     {
         public boolean onTouch(View v, MotionEvent event)
         {
@@ -495,12 +518,13 @@ public class BasicGameActivity extends FullScreenActivity {
                 blocks[0].TurnBlock();
                 curBlock.removeAllViews();
                 curBlock.addView(DrawBlock(blocks[0], 1));
+
             }
             return true;
         }
     };
 
-    private void CheckLine()
+    protected void CheckLine()
     {
         hLineCnt = 0;
         vLineCnt = 0;
@@ -537,16 +561,16 @@ public class BasicGameActivity extends FullScreenActivity {
 
         if(hLineCnt > 0 || vLineCnt > 0)
         {
+            //점수 증가
             int score = hLineCnt * 100 + vLineCnt * 100;                    //이번 턴 점수
             int curScore = Integer.parseInt(tvScore.getText().toString());   //기존 점수
-            targetScore = score + curScore;
-
-
+            tvScore.setText(Integer.toString(curScore + score));
+            mSoundManager.playSound(3);
             LineClear(true);
         }
     }
 
-    private void LineClear(boolean run)
+    protected void LineClear(boolean run)
     {
         if(hLineCnt > 0)
         {
@@ -556,9 +580,9 @@ public class BasicGameActivity extends FullScreenActivity {
                 {
                     BoardArr[hLineArr[i-1]][j] = 0;
                     if(run)
-                        cellArr[hLineArr[i-1]][j].setBackgroundColor(getResources().getColor(R.color.GBhighlight));
+                        cellArr[hLineArr[i-1]][j].setBackgroundResource(R.drawable.highlight);
                     else
-                        cellArr[hLineArr[i-1]][j].setBackgroundColor(getResources().getColor(R.color.GBfore));
+                        cellArr[hLineArr[i-1]][j].setBackgroundResource(R.drawable.noblock);
                 }
             }
         }
@@ -570,9 +594,9 @@ public class BasicGameActivity extends FullScreenActivity {
                 {
                     BoardArr[j][vLineArr[i-1]] = 0;
                     if(run)
-                        cellArr[j][vLineArr[i-1]].setBackgroundColor(getResources().getColor(R.color.GBhighlight));
+                        cellArr[j][vLineArr[i-1]].setBackgroundResource(R.drawable.highlight);
                     else
-                        cellArr[j][vLineArr[i-1]].setBackgroundColor(getResources().getColor(R.color.GBfore));
+                        cellArr[j][vLineArr[i-1]].setBackgroundResource(R.drawable.noblock);
                 }
             }
         }
@@ -591,7 +615,7 @@ public class BasicGameActivity extends FullScreenActivity {
         LineClear(false);
     }
 
-    private void reOrder()
+    protected void reOrder()
     {
         int idx = 0;
         int term = 1;
@@ -606,35 +630,35 @@ public class BasicGameActivity extends FullScreenActivity {
                     switch (BoardArr[i+term][j])
                     {
                         case 1:
-                            cellArr[i][j].setBackgroundColor(getResources().getColor(R.color.bc1));
+                            cellArr[i][j].setBackgroundResource(R.drawable.block1);
                             break;
                         case 2:
-                            cellArr[i][j].setBackgroundColor(getResources().getColor(R.color.bc2));
+                            cellArr[i][j].setBackgroundResource(R.drawable.block2);
                             break;
                         case 3:
-                            cellArr[i][j].setBackgroundColor(getResources().getColor(R.color.bc3));
+                            cellArr[i][j].setBackgroundResource(R.drawable.block3);
                             break;
                         case 4:
-                            cellArr[i][j].setBackgroundColor(getResources().getColor(R.color.bc4));
+                            cellArr[i][j].setBackgroundResource(R.drawable.block4);
                             break;
                         case 5:
-                            cellArr[i][j].setBackgroundColor(getResources().getColor(R.color.bc5));
+                            cellArr[i][j].setBackgroundResource(R.drawable.block5);
                             break;
                         case 6:
-                            cellArr[i][j].setBackgroundColor(getResources().getColor(R.color.bc6));
+                            cellArr[i][j].setBackgroundResource(R.drawable.block6);
                             break;
                         case 7:
-                            cellArr[i][j].setBackgroundColor(getResources().getColor(R.color.bc7));
+                            cellArr[i][j].setBackgroundResource(R.drawable.block7);
                             break;
                         default:
-                            cellArr[i][j].setBackgroundColor(getResources().getColor(R.color.GBfore));
+                            cellArr[i][j].setBackgroundResource(R.drawable.noblock);
                     }
                 }
             }
             for(int j = 0; j < iBoardSize; j++) {
                 for(int i = 0; i < term; i++){
                     BoardArr[iBoardSize-i-1][j] = 0;
-                    cellArr[iBoardSize-i-1][j].setBackgroundColor(getResources().getColor(R.color.GBfore));
+                    cellArr[iBoardSize-i-1][j].setBackgroundResource(R.drawable.noblock);
                 }
             }
         }
@@ -652,37 +676,104 @@ public class BasicGameActivity extends FullScreenActivity {
                     switch (BoardArr[j][i+term])
                     {
                         case 1:
-                            cellArr[j][i].setBackgroundColor(getResources().getColor(R.color.bc1));
+                            cellArr[j][i].setBackgroundResource(R.drawable.block1);
                             break;
                         case 2:
-                            cellArr[j][i].setBackgroundColor(getResources().getColor(R.color.bc2));
+                            cellArr[j][i].setBackgroundResource(R.drawable.block2);
                             break;
                         case 3:
-                            cellArr[j][i].setBackgroundColor(getResources().getColor(R.color.bc3));
+                            cellArr[j][i].setBackgroundResource(R.drawable.block3);
                             break;
                         case 4:
-                            cellArr[j][i].setBackgroundColor(getResources().getColor(R.color.bc4));
+                            cellArr[j][i].setBackgroundResource(R.drawable.block4);
                             break;
                         case 5:
-                            cellArr[j][i].setBackgroundColor(getResources().getColor(R.color.bc5));
+                            cellArr[j][i].setBackgroundResource(R.drawable.block5);
                             break;
                         case 6:
-                            cellArr[j][i].setBackgroundColor(getResources().getColor(R.color.bc6));
+                            cellArr[j][i].setBackgroundResource(R.drawable.block6);
                             break;
                         case 7:
-                            cellArr[j][i].setBackgroundColor(getResources().getColor(R.color.bc7));
+                            cellArr[j][i].setBackgroundResource(R.drawable.block7);
                             break;
                         default:
-                            cellArr[j][i].setBackgroundColor(getResources().getColor(R.color.GBfore));
+                            cellArr[j][i].setBackgroundResource(R.drawable.noblock);
                     }
                 }
             }
             for(int j = 0; j < iBoardSize; j++) {
                 for(int i = 0; i < term; i++){
                     BoardArr[j][iBoardSize-i-1] = 0;
-                    cellArr[j][iBoardSize-i-1].setBackgroundColor(getResources().getColor(R.color.GBfore));
+                    cellArr[j][iBoardSize-i-1].setBackgroundResource(R.drawable.noblock);
                 }
             }
         }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event)
+    {
+        if(keyCode == KeyEvent.KEYCODE_BACK)
+        {
+            cdt.cancel();
+            TempBoard.setOnTouchListener(null);
+            curBlockBox.setOnTouchListener(null);
+            tvGameModeTitle.setText("Pause");
+            tvGameModeInfo.setText("게임이 일시정지 되었습니다!");
+            layoutStatBtns.removeAllViews();
+            LinearLayout.LayoutParams stateBtn1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT,  1);
+            LinearLayout.LayoutParams stateBtn2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT,  2);
+            stateBtn1.setMargins(5, 5, 5, 5);
+            stateBtn2.setMargins(5, 5, 5, 5);
+            Button btnHome = new Button(this);
+            Button btnReplay = new Button(this);
+
+            btnReplay.setLayoutParams(stateBtn1);
+            btnReplay.setBackgroundColor(getResources().getColor(R.color.ThemeRed));
+            btnReplay.setTextColor(getResources().getColor(R.color.ThemeBeige));
+            btnReplay.setText("다시시작");
+            btnReplay.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v){
+                    layoutGameStateBg.setVisibility(View.INVISIBLE);
+
+                    TempBoard.setOnTouchListener(BoardTouchEvent);
+                    curBlockBox.setOnTouchListener(blockTouchEvent);
+
+                    cdt = new CountDownTimer(1000 * 100, 1000){
+                        public void onTick (long millisUntilFinished){
+                            if(pbTimer.getProgress() > 0){
+                                pbTimer.setProgress(pbTimer.getProgress() - 1);
+                            }
+                        }
+                        public void onFinish(){
+                            pbTimer.setProgress(0);
+                            GameOver();
+                        }
+                    }.start();
+                    mp.start();
+                }
+            });
+
+            btnHome.setLayoutParams(stateBtn2);
+            btnHome.setBackgroundColor(getResources().getColor(R.color.ThemeNavy));
+            btnHome.setTextColor(getResources().getColor(R.color.ThemeBeige));
+            btnHome.setText("홈으로");
+            btnHome.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v){
+                    cdt.cancel();
+                    mp.stop();
+                    finish();
+                }
+            });
+            layoutStatBtns.addView(btnHome);
+            layoutStatBtns.addView(btnReplay);
+            layoutGameStateBg.setVisibility(View.VISIBLE);
+        }
+        return false;
+    }
+
+    @SuppressWarnings("deprecation")
+    public int getLcdSizeWidth(){
+        return ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getWidth();
     }
 }

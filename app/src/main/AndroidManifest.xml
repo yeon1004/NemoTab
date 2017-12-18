@@ -7,22 +7,29 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:screenOrientation="landscape"
+        android:screenOrientation="portrait"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
-        <activity android:name=".LoadingActivity"
-            android:screenOrientation="landscape">
+        <activity
+            android:name=".LoadingActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MainActivity"
-            android:screenOrientation="landscape"/>
-        <activity android:name=".BasicGameActivity"
-            android:screenOrientation="landscape"/>
-        <activity android:name=".FullScreenActivity"
-            android:screenOrientation="landscape"></activity>
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".BasicGameActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".FullScreenActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".StageActivity" />
+        <activity android:name=".SelectStageActivity"></activity>
     </application>
 
 </manifest>

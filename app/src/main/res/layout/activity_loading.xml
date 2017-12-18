@@ -14,12 +14,13 @@
 
     </LinearLayout>
     <TextView
+        android:id="@+id/tvLogo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="NemoTab"
+        android:text="Nayeon"
         android:textColor="@color/ThemeBeige"
         android:layout_gravity="center"
         android:gravity="center"
-        android:textSize="50dp"
+        android:textSize="30dp"
         android:textStyle="bold"/>
 </LinearLayout>

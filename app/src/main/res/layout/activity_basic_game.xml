@@ -4,37 +4,39 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:background="@color/ThemeGray"
+    android:orientation="vertical"
+    android:background="@drawable/bg"
     tools:context="com.example.iiny1.nemotab.BasicGameActivity">
+
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
             <!--점수판 레이아웃-->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="3"
+                android:layout_weight="5"
                 android:orientation="vertical"
                 android:padding="20dp">
                 <!--점수판-->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/border">
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
                     <!--점수-->
                     <TextView
                         android:id="@+id/tvScore"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_gravity="center"
                         android:gravity="center"
                         android:text="0"
-                        android:textSize="30dp"
+                        android:textSize="50dp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"/>
                 </LinearLayout>
@@ -44,15 +46,15 @@
                     android:layout_gravity="center"
                     android:gravity="center"
                     android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="2"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
                     android:background="@drawable/border"
-                    android:orientation="vertical">
+                    android:orientation="horizontal">
                     <LinearLayout
                         android:id="@+id/curBlockBox"
                         android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="2"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
                         android:layout_margin="2dp"
                         android:layout_gravity="center"
                         android:gravity="center">
@@ -67,9 +69,9 @@
                     </LinearLayout>
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="0dp"
+                        android:layout_height="match_parent"
                         android:orientation="horizontal"
-                        android:layout_weight="1"
+                        android:layout_weight="2"
                         android:layout_gravity="center"
                         android:gravity="center">
                         <LinearLayout
@@ -111,36 +113,36 @@
             </LinearLayout>
             <!--시간 레이아웃-->
             <RelativeLayout
-                android:layout_width="10dp"
-                android:layout_height="match_parent">
+                android:layout_width="match_parent"
+                android:layout_height="10dp">
                 <ProgressBar
                     android:id="@+id/pbTimer"
-                    style="@android:style/Widget.ProgressBar.Horizontal"
+                    style="?android:attr/progressBarStyleHorizontal"
                     android:layout_centerInParent="true"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:max="100"
-                    android:progressDrawable="@drawable/progress_drawable" />
+                    android:max="200"
+                    android:progressDrawable="@drawable/progress_drawable"/>
             </RelativeLayout>
             <!--게임 레이아웃-->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
+                android:layout_weight="3"
                 android:layout_gravity="center"
                 android:gravity="center">
                 <!--게임판 레이아웃-->
                 <FrameLayout
-                    android:layout_width="330dp"
-                    android:layout_height="330dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:layout_gravity="center"
                     android:gravity="center"
                     android:padding="1dp">
                     <!--메인 게임판-->
                     <TableLayout
                         android:id="@+id/GameBoard"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_width="300dp"
+                        android:layout_height="300dp"
                         android:orientation="horizontal">
                     </TableLayout>
                     <!--임시 게임판-->
@@ -164,16 +166,17 @@
             android:visibility="invisible">
             <LinearLayout
                 android:id="@+id/layoutGameState"
-                android:layout_width="400dp"
-                android:layout_height="200dp"
+                android:layout_width="300dp"
+                android:layout_height="300dp"
                 android:orientation="vertical"
-                android:background="@color/ThemeBeige">
+                android:background="@drawable/border2"
+                >
                 <TextView
                     android:id="@+id/tvGameModeTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="50dp"
-                    android:textColor="@color/ThemeGray"
+                    android:textSize="40dp"
+                    android:textColor="@color/ThemeBeige"
                     android:layout_gravity="center"
                     android:gravity="center"
                     android:layout_weight="3"/>
@@ -184,7 +187,7 @@
                     android:layout_weight="2"
                     android:layout_gravity="center"
                     android:gravity="center"
-                    android:textColor="@color/ThemeGray"/>
+                    android:textColor="@color/ThemeBeige"/>
                 <LinearLayout
                     android:id="@+id/layoutStateBtns"
                     android:layout_width="match_parent"
